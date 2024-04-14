@@ -12,7 +12,6 @@ import (
 const serverAddr = "localhost:13000"
 
 var testConf = agent.AgentConf {
-    Health: 13,
     Targets: []agent.Target {
         { Host: "192.168.1.113", Port: 22 },
         { Host: "192.158.1.113", Port: 55 },

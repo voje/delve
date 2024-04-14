@@ -1,7 +1,6 @@
 package agent
 
 type AgentConf struct {
-    Health    int `json:"health"`
     Targets []Target `json:"targets"`
     Interval int  `json:"interval"`
 }

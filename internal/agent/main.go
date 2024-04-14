@@ -20,10 +20,7 @@ type Agent struct {
 
 func NewAgent(server string) *Agent {
     return &Agent {
-        conf: AgentConf{
-            Health: 10,
-        },
-        // Health ticks down each second
+        conf: AgentConf{},
         server: server,
     }
 }
@@ -34,7 +31,8 @@ func (a *Agent) UpdateConf(conf *AgentConf) {
     a.mu.Unlock()
 }
 
-func (a *Agent) pingServer() error {
+func (a *Agent) fetchConf() error {
+    a.conf = AgentConf{}
     agentsURL := fmt.Sprintf("%s/agents", a.server)
     // TODO is json.Marshal thread safe?
     b, err := json.Marshal(a.conf)
@@ -63,19 +61,9 @@ func (a *Agent) scanTargets() {
 
 func (a *Agent) Run() {
     for {
-        // Pinging the server pulls configuration (targets) and extends health
-        a.pingServer()
-        log.Infof("Health: %v", a.conf.Health)
+        a.fetchConf()
         log.Debugf("Conf: %v", a.conf)
-        a.mu.Lock()
-        if (a.conf.Health > 0) {
-            a.scanTargets()
-            log.Debugf("%+v", a.conf.Targets)
-            a.conf.Health = a.conf.Health - 1
-        } else {
-            a.conf.Targets = []Target{}
-        }
-        a.mu.Unlock()
+        a.scanTargets()
         time.Sleep(time.Duration(time.Second))
     }
 }
