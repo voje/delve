@@ -8,6 +8,8 @@ import (
 type Target struct {
     Host string `json:"host"`
     Port int `json:"port"`
+    // Scan result
+    Res string `json:"res,omitempty"`
 }
 
 type AgentConf struct {

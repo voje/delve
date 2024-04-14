@@ -5,8 +5,10 @@ import (
 	"github.com/voje/delve/internal/agent"
 )
 
+const server = "http://localhost:13000"
+
 func main() {
-    a := agent.NewAgent()
+    a := agent.NewAgent(server)
     go a.Run()
 
     r := gin.Default()
