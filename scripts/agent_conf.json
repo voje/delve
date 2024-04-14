@@ -1,7 +1,7 @@
 {
-    "heal": -110,
+    "health": 13,
     "targets": [
-        {"host": "one", "port": 1},
+        {"host": "192.168.1.113", "port": 22},
         {"host": "two", "port": 2},
         {"host": "three", "port": 3}
     ]

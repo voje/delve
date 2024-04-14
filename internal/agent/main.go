@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"os"
 	"sync"
 	"time"
 
@@ -16,17 +15,15 @@ import (
 type Agent struct {
     mu sync.Mutex
     conf AgentConf
-    health time.Duration
-    interval time.Duration
     server string
 }
 
 func NewAgent(server string) *Agent {
     return &Agent {
-        conf: AgentConf{},
-        health: time.Duration(time.Second * 10),
+        conf: AgentConf{
+            Health: 10,
+        },
         // Health ticks down each second
-        interval: time.Duration(time.Second),
         server: server,
     }
 }
@@ -34,8 +31,6 @@ func NewAgent(server string) *Agent {
 func (a *Agent) UpdateConf(conf *AgentConf) {
     a.mu.Lock() 
     a.conf = *conf
-    a.health = a.health + (time.Duration(conf.Heal) * time.Second)
-    log.Infof("%+v", a.conf)
     a.mu.Unlock()
 }
 
@@ -44,42 +39,60 @@ func (a *Agent) pingServer() error {
     // TODO is json.Marshal thread safe?
     b, err := json.Marshal(a.conf)
     if err != nil {
-        log.Panic(err)
+        return err
     }
     req, _ := http.NewRequest("POST", agentsURL, bytes.NewBuffer(b))
     req.Header.Set("Content-Type", "application/json")
     c := &http.Client{}
     res, err := c.Do(req)
     if err != nil {
-        log.Panic(err)
+        return err
     }
-    log.Debugf("%+v", res)
+    conf := AgentConf{}
+    json.NewDecoder(res.Body).Decode(&conf)
+    a.UpdateConf(&conf)
     return nil
+}
+
+func (a *Agent) scanTargets() {
+    for _, t := range a.conf.Targets {
+        t.DelveTCP()
+        log.Debugf("DD %+v", t)
+    }
 }
 
 func (a *Agent) Run() {
     for {
+        // Pinging the server pulls configuration (targets) and extends health
         a.pingServer()
-        log.Infof("Health: %v", a.health)
-        for _, t := range a.conf.Targets {
-            e := t.DelveTCP()
-            log.Info(e)
+        log.Infof("Health: %v", a.conf.Health)
+        log.Debugf("Conf: %v", a.conf)
+        a.mu.Lock()
+        if (a.conf.Health > 0) {
+            a.scanTargets()
+            log.Debugf("%+v", a.conf.Targets)
+            a.conf.Health = a.conf.Health - 1
+        } else {
+            a.conf.Targets = []Target{}
         }
-        time.Sleep(a.interval)
-        a.health = a.health - a.interval
-        if (a.health <= 0) {
-            log.Info("Out of health!")
-            os.Exit(0)
-        }
+        a.mu.Unlock()
+        time.Sleep(time.Duration(time.Second))
     }
 }
 
-func (t *Target) DelveTCP() error {
+func (t *Target) DelveTCP() {
     timeout := time.Duration(time.Second)
     c, e := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", t.Host, t.Port), timeout) 
-    if e == nil {
+    if c != nil {
         defer c.Close()
     }
-    return e
+
+    if e != nil {
+        t.Status = fmt.Sprintf("Unreachable: (%v)", e)
+    } else {
+        t.Status = "OK"
+    }
+
+    log.Debugf("DelveTCP: %v", t)
 }
 
