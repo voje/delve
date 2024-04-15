@@ -1,13 +1,38 @@
 <html>
 
 <head>
-      <link rel = "stylesheet" href = "/assets/bulma/bulma.css">
+	<link rel = "stylesheet" href = "/assets/bulma/bulma.css">
 </head>
 
 <body>
-<section class="hero">
-    <h1 class="title">Hello from Delve server</h1>
-</section>
+
+	<div class="container">
+
+	<section class="hero">
+		<h1 class="title">Hello from Delve server</h1>
+	</section>
+
+	<table class="table">
+
+		<thead>
+			<tr>
+				<th>ID</th>
+				<th>TTT</th>
+			</tr>
+		</thead>
+
+		<tbody>
+			{{ range $k, $v := .server.Agents }}
+			<tr>
+				<td>{{ $k }}</td>
+				<td>derph</td>
+			</tr>
+			{{ end }}
+		</tbody>
+
+	</table>
+
+	</div>
 
 </body>
 

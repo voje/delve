@@ -16,12 +16,14 @@ type Agent struct {
     mu sync.Mutex
     conf AgentConf
     server string
+    id string
 }
 
 func NewAgent(server string) *Agent {
     return &Agent {
         conf: AgentConf{},
         server: server,
+        id: "derpson",
     }
 }
 
@@ -33,7 +35,7 @@ func (a *Agent) UpdateConf(conf *AgentConf) {
 
 func (a *Agent) fetchConf() error {
     a.conf = AgentConf{}
-    agentsURL := fmt.Sprintf("%s/agents", a.server)
+    agentsURL := fmt.Sprintf("%s/agent?id=%s", a.server, a.id)
     // TODO is json.Marshal thread safe?
     b, err := json.Marshal(a.conf)
     if err != nil {

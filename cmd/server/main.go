@@ -18,15 +18,26 @@ var testConf = agent.AgentConf {
     },
 }
 
+type Server struct {
+	Agents map[string]agent.AgentConf
+}
+
 func main() {
     r := gin.Default()
 
+    s := Server{
+	Agents: make(map[string]agent.AgentConf),
+    }
+
     r.Static("/assets/", "./internal/server/assets/")
 
-    r.POST("/agents", func(c *gin.Context) {
-        currentConf := agent.AgentConf{}
-        c.BindJSON(&currentConf)
-        log.Infof("currentConf: %+v", currentConf)
+    r.POST("/agent", func(c *gin.Context) {
+	currentConf := agent.AgentConf{}
+	c.BindJSON(&currentConf)
+	log.Infof("currentConf: %+v", currentConf)
+
+	// TODO merge
+	s.Agents[c.Param("id")] = currentConf
 
         // Need to send conf based on agent ID/Hostname
         c.JSON(http.StatusOK, testConf)
@@ -35,8 +46,9 @@ func main() {
     r.LoadHTMLGlob("./internal/server/templates/*.tmpl")
 
     r.GET("/", func(c *gin.Context) {
+	log.Infof("%v", s)
         c.HTML(http.StatusOK, "hello.tmpl", gin.H{
-            "title": "Main website",
+		"server": s,
         })
     })
 
