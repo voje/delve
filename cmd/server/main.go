@@ -21,6 +21,8 @@ var testConf = agent.AgentConf {
 func main() {
     r := gin.Default()
 
+    r.Static("/assets/", "./internal/server/assets/")
+
     r.POST("/agents", func(c *gin.Context) {
         currentConf := agent.AgentConf{}
         c.BindJSON(&currentConf)
@@ -28,6 +30,14 @@ func main() {
 
         // Need to send conf based on agent ID/Hostname
         c.JSON(http.StatusOK, testConf)
+    })
+
+    r.LoadHTMLGlob("./internal/server/templates/*.tmpl")
+
+    r.GET("/", func(c *gin.Context) {
+        c.HTML(http.StatusOK, "hello.tmpl", gin.H{
+            "title": "Main website",
+        })
     })
 
     r.Run(serverAddr)
